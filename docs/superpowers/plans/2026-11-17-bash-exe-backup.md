@@ -1,6 +1,6 @@
 # bash-exe Backup Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Deploy an independent five-minute GitHub backup of all upstream Git branches and tags.
 
@@ -26,17 +26,17 @@
 ### Task 1: Tested non-destructive sync
 **Files:** scripts/sync.sh; tests/test_sync.py.
 **Interfaces:** `bash scripts/sync.sh SOURCE_URL TARGET_URL`; zero on success/no change, nonzero on read/push failure.
-- [ ] Write unittest fixtures using disposable local Git repos; test branches, annotated tags, history, new commits, forced changes, retained deletions, no-change, missing/empty upstream.
-- [ ] Run `python -I -m unittest discover -s tests -v` and observe missing-script failures.
-- [ ] Implement read-before-write, temporary bare fetch and explicit heads/tags atomic push; no checkout, no prune.
-- [ ] Run the tests and Bash syntax validation; require all passing.
+- [x] Write unittest fixtures using disposable local Git repos; test branches, annotated tags, history, new commits, forced changes, retained deletions, no-change, missing/empty upstream.
+- [x] Run `python -I -m unittest discover -s tests -v` and observe missing-script failures.
+- [x] Implement read-before-write, temporary bare fetch and explicit heads/tags atomic push; no checkout, no prune.
+- [x] Run the tests and Bash syntax validation; require all passing.
 
 ### Task 2: Deploy and verify
 **Files:** .github/workflows/sync.yml; README.md; .gitignore.
 **Interfaces:** secret BACKUP_SSH_KEY; trusted GitHub SSH host key; upstream/destination fixed in workflow.
-- [ ] Write five-minute/manual workflow with pinned checkout, job concurrency, timeouts, minimal permissions, SSH secret cleanup, monthly controller keepalive running even after sync failure.
-- [ ] Create independent public backup and disable its Actions BEFORE copying upstream refs.
-- [ ] Create public controller, scoped deploy key and secret, push trusted workflow; never stage the key.
-- [ ] Run workflow_dispatch; inspect logs and require success.
-- [ ] Compare every upstream branch/tag SHA with backup, check repository independence and disabled target Actions.
-- [ ] Record deployment URLs and verification in local execution index.
+- [x] Write five-minute/manual workflow with pinned checkout, job concurrency, timeouts, minimal permissions, SSH secret cleanup, monthly controller keepalive running even after sync failure.
+- [x] Create independent public backup and disable its Actions BEFORE copying upstream refs.
+- [x] Create public controller, scoped deploy key and secret, push trusted workflow; never stage the key.
+- [x] Run workflow_dispatch; inspect logs and require success.
+- [x] Compare every upstream branch/tag SHA with backup, check repository independence and disabled target Actions.
+- [x] Record deployment URLs and verification in local execution index.
