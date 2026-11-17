@@ -1,0 +1,62 @@
+name: Backup bash-exe
+
+on:
+  schedule:
+    - cron: '2-59/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bash-exe-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      GIT_TERMINAL_PROMPT: '0'
+    steps:
+      - name: Check out trusted controller only
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 1
+
+      - name: Test safety behavior on manual runs
+        if: github.event_name == 'workflow_dispatch'
+        run: python3 -I -m unittest discover -s tests -v
+
+      - name: Configure repository-scoped backup key
+        env:
+          BACKUP_SSH_KEY: ${{ secrets.BACKUP_SSH_KEY }}
+        run: |
+          umask 077
+          test -n "$BACKUP_SSH_KEY"
+          printf '%s\n' "$BACKUP_SSH_KEY" > "$RUNNER_TEMP/backup_key"
+          printf '%s\n' 'github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl' > "$RUNNER_TEMP/backup_known_hosts"
+
+      - name: Synchronize branches, tags and Git history without deletions
+        run: |
+          export GIT_SSH_COMMAND="ssh -i $RUNNER_TEMP/backup_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$RUNNER_TEMP/backup_known_hosts"
+          bash scripts/sync.sh https://github.com/baocode-dev/bash-exe.git git@github.com:Liu-fu-gui/bash-exe.git
+          printf '%s\n' 'All current upstream Git branches and tags are backed up. Deleted upstream refs are retained.' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Keep controller active even if upstream is unavailable
+        if: ${{ !cancelled() }}
+        run: |
+          last=$(git log -1 --format=%ct)
+          now=$(date +%s)
+          if (( now - last >= 30 * 86400 )); then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit --allow-empty -m 'chore: keep backup schedule active' -m 'Co-Authored-By: BaoCode <noreply@baocode.dev>'
+            git push origin HEAD:main
+          fi
+
+      - name: Remove temporary SSH material
+        if: always()
+        run: rm -f -- "$RUNNER_TEMP/backup_key" "$RUNNER_TEMP/backup_known_hosts"
